@@ -1,0 +1,60 @@
+name: Smoke Tests After Deploy
+
+on:
+  push:
+    branches: [ dev_deploy, main ]
+
+jobs:
+  smoke_tests:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Install repo deps
+        run: |
+          npm ci || true
+
+      - name: Ensure smoke scripts are executable
+        run: |
+          chmod +x ./scripts/smoke_test_render.sh || true
+
+      - name: Wait for service to be reachable
+        if: ${{ secrets.RENDER_SERVICE_URL }}
+        env:
+          SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
+        run: |
+          set -e
+          echo "Polling ${SERVICE_URL}/health for up to 5 minutes..."
+          for i in {1..30}; do
+            if curl -fsS "${SERVICE_URL}/health" >/dev/null 2>&1; then
+              echo "Service responded to /health"
+              exit 0
+            fi
+            echo "Waiting... ($i)"
+            sleep 10
+          done
+          echo "Timeout waiting for service to respond at ${SERVICE_URL}/health"
+          exit 1
+
+      - name: Run HTTP smoke tests
+        if: ${{ secrets.RENDER_SERVICE_URL }}
+        env:
+          SERVICE_URL: ${{ secrets.RENDER_SERVICE_URL }}
+        run: |
+          ./scripts/smoke_test_render.sh "$SERVICE_URL"
+
+      - name: Install socket.io-client for socket smoke-test
+        run: |
+          npm install --no-save socket.io-client
+
+      - name: Run socket smoke-test
+        if: ${{ secrets.RENDER_SERVICE_URL }}
+        env:
+          RENDER_URL: ${{ secrets.RENDER_SERVICE_URL }}
+        run: |
+          node ./scripts/smoke_test_socket.js "$RENDER_URL"

@@ -128,6 +128,18 @@ app.get('/leaderboard', async (req, res) => {
     }
 });
 
+// Health check endpoint
+app.get('/health', async (req, res) => {
+    try {
+        const dbConnected = (typeof client.isConnected === 'function') ? client.isConnected() : false;
+        const dbStatus = dbConnected ? 'ok' : (process.env.NO_DB ? 'disabled' : 'unavailable');
+        return res.status(200).json({ status: 'ok', db: dbStatus });
+    } catch (e) {
+        console.error('Health check error:', e);
+        return res.status(500).json({ status: 'error' });
+    }
+});
+
 // Associate socket with logged-in user
 app.post('/login', authenticateToken, function (req, res) {
     const player = playerInfo.get(req.body.socketId);
