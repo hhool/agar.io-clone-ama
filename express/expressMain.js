@@ -11,6 +11,12 @@ const client = require('../database/database');
 
 app.use(bodyParser.json());
 
+function sendDbUnavailable(res) {
+    return res.status(503).json({
+        error: 'Database unavailable. Start Postgres or set DATABASE_URL (or set NO_DB=1 to run without DB).'
+    });
+}
+
 // Middleware to verify JWT token
 const authenticateToken = (req, res, next) => {
     const authHeader = req.headers['authorization'];
@@ -64,6 +70,9 @@ app.post('/register', async (req, res) => {
 
         res.status(201).json({ token, user: { id: user.id, username: user.username } });
     } catch (err) {
+        if (err?.code === 'DB_UNAVAILABLE') {
+            return sendDbUnavailable(res);
+        }
         console.error('Registration error:', err);
         res.status(500).json({ error: 'Registration failed' });
     }
@@ -96,6 +105,9 @@ app.post('/auth/login', async (req, res) => {
 
         res.json({ token, user: { id: user.id, username: user.username } });
     } catch (err) {
+        if (err?.code === 'DB_UNAVAILABLE') {
+            return sendDbUnavailable(res);
+        }
         console.error('Login error:', err);
         res.status(500).json({ error: 'Login failed' });
     }
@@ -108,8 +120,11 @@ app.get('/leaderboard', async (req, res) => {
         const results = { 'results': result ? result.rows : null };
         res.status(200).send(results);
     } catch (err) {
+        if (err?.code === 'DB_UNAVAILABLE') {
+            return sendDbUnavailable(res);
+        }
         console.error(err);
-        res.send("Error " + err);
+        res.status(500).send("Error " + err);
     }
 });
 
@@ -132,8 +147,11 @@ app.get('/stats', authenticateToken, async (req, res) => {
         );
         res.status(200).send(result.rows?.[0] || { maxScore: 0, sumOrbs: 0, sumPlayers: 0 });
     } catch (err) {
+        if (err?.code === 'DB_UNAVAILABLE') {
+            return sendDbUnavailable(res);
+        }
         console.error(err);
-        res.send("Error " + err);
+        res.status(500).send("Error " + err);
     }
 });
 

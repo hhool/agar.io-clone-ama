@@ -173,11 +173,15 @@ io.sockets.on('connect', socket => {
 
 //run query
 async function updateLeaderBoard(values) {
-    await client.query(updateQuery, values, (err, res) => {
-        if (err) {
-            console.log(err.stack)
+    try {
+        await client.query(updateQuery, values);
+    } catch (err) {
+        if (err?.code === 'DB_UNAVAILABLE') {
+            // DB is unavailable in NO_DB mode; skip persisting leaderboard
+            return;
         }
-    });
+        console.log(err?.stack || err);
+    }
 }
 
 
