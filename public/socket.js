@@ -57,14 +57,46 @@ socket.on('tock', data => {
         // false for not mobile device
         player.zoom = data.zoom;
     }
+        // Merge AOI/delta updates from server. Server will send { full: true } periodically.
+        if (!data) return;
+        // Ensure players is an array we can merge into
+        if (!Array.isArray(players)) players = [];
 
-    //update the leaderboard!
-    players.forEach(p => {
-        if (p.name === player.name) {
-            document.querySelector('.player-score').innerHTML = player.score;
-            player.orbsAbsorbed = p.orbsAbsorbed;
-            player.playersKilled = p.playersKilled;
-            player.score = p.score;
+        if (data.full) {
+            // Replace visible lists with full payload
+            players = data.players || [];
+            orbs = data.orbs || [];
+        } else {
+            // Merge player deltas into existing players map (preserve names/colors if present locally)
+            const map = new Map();
+            for (const p of players) {
+                if (p && p.uid != null) map.set(p.uid, p);
+            }
+            (data.players || []).forEach(d => {
+                const existing = map.get(d.uid);
+                if (existing) {
+                    existing.locX = d.locX;
+                    existing.locY = d.locY;
+                    if (d.radius != null) existing.radius = d.radius;
+                    if (d.color) existing.color = d.color;
+                    if (d.score != null) existing.score = d.score;
+                } else {
+                    map.set(d.uid, { uid: d.uid, name: d.name || '', locX: d.locX, locY: d.locY, radius: d.radius || 6, color: d.color || 'rgb(200,200,200)', score: d.score || 0 });
+                }
+            });
+            players = Array.from(map.values());
+
+            // For orbs, we'll replace the set in full frames; for delta frames we can optionally ignore or update positions.
+            // Keep existing `orbs` to avoid replacing a large array with small deltas here.
+        }
+
+        player.locX = data.playerX || player.locX;
+        player.locY = data.playerY || player.locY;
+        player.zoom = data.zoom || player.zoom;
+
+        // update leaderboard and UI
+        lb = players;
+        displayLB();
         }
     })
     lb = players;

@@ -108,16 +108,60 @@ io.sockets.on('connect', socket => {
         let playerData = new PlayerData(data.playerName, settings);
         player.playerConfig = playerConfig;
         player.playerData = playerData;
-        setInterval(() => {
-            if (player.playerData) {
-                socket.emit('tock', {
-                    players,
-                    playerX: player.playerData.locX,
-                    playerY: player.playerData.locY,
-                    zoom: player.playerConfig.zoom
-                });
-            }
-        }, 16);
+            // Per-socket AOI + volatile delta/full mix to reduce bandwidth.
+            // Sends a lightweight delta most ticks and a fuller snapshot periodically.
+            let clientTick = 0;
+            const VIEW_RADIUS_BASE = 800;
+            setInterval(() => {
+                if (!player.playerData) return;
+                clientTick += 1;
+                const playerX = player.playerData.locX;
+                const playerY = player.playerData.locY;
+                const zoom = player.playerConfig && player.playerConfig.zoom ? player.playerConfig.zoom : 1;
+                const viewRadius = Math.max(600, VIEW_RADIUS_BASE / Math.max(0.5, zoom));
+                const viewRadiusSq = viewRadius * viewRadius;
+
+                // Visible players (filter by distance to reduce payload)
+                const visiblePlayers = [];
+                for (let i = 0; i < players.length; i++) {
+                    const p = players[i];
+                    if (!p || typeof p.locX !== 'number' || typeof p.locY !== 'number') continue;
+                    const dx = p.locX - playerX;
+                    const dy = p.locY - playerY;
+                    if (dx * dx + dy * dy <= viewRadiusSq) {
+                        visiblePlayers.push({
+                            uid: p.uid,
+                            name: p.name,
+                            locX: p.locX,
+                            locY: p.locY,
+                            radius: p.radius,
+                            color: p.color,
+                            score: p.score
+                        });
+                    }
+                }
+
+                // Visible orbs
+                const visibleOrbs = [];
+                for (let i = 0; i < orbs.length; i++) {
+                    const o = orbs[i];
+                    if (!o) continue;
+                    const dx = o.locX - playerX;
+                    const dy = o.locY - playerY;
+                    if (dx * dx + dy * dy <= viewRadiusSq) {
+                        visibleOrbs.push({ locX: o.locX, locY: o.locY, radius: o.radius, color: o.color });
+                    }
+                }
+
+                // Send a full-ish snapshot on the first tick and then periodically (every 10 ticks), otherwise send lightweight deltas.
+                if (clientTick === 1 || clientTick % 10 === 0) {
+                    socket.volatile.emit('tock', { players: visiblePlayers, orbs: visibleOrbs, playerX, playerY, zoom, full: true });
+                } else {
+                    const playersDelta = visiblePlayers.map(p => ({ uid: p.uid, locX: p.locX, locY: p.locY }));
+                    const orbsDelta = visibleOrbs.map(o => ({ locX: o.locX, locY: o.locY }));
+                    socket.volatile.emit('tock', { players: playersDelta, orbs: orbsDelta, playerX, playerY, zoom, full: false });
+                }
+            }, 16);
         socket.emit('initReturn', { 
             orbs, 
             uid: player.playerData.uid,
