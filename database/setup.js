@@ -1,6 +1,13 @@
 // Database setup script - run with: npm run db:setup
 const { Client } = require('pg');
 
+// If NO_DB is set, skip running setup
+const dbDisabled = /^(1|true|yes)$/i.test(String(process.env.NO_DB || process.env.DISABLE_DB || ''));
+if (dbDisabled) {
+    console.log('[db/setup] NO_DB is set — skipping database initialization.');
+    process.exit(0);
+}
+
 const client = new Client({
     connectionString: process.env.DATABASE_URL || 'postgresql://postgres:password@localhost:5432/agar',
     ssl: process.env.DATABASE_URL ? { rejectUnauthorized: false } : false
