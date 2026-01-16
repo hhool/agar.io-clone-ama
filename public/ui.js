@@ -15,6 +15,7 @@ canvas.width = wWidth;
 canvas.height = wHeight;
 
 let lb = [];
+var clock = null;
 
 
 
