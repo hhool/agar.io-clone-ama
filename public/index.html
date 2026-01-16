@@ -69,7 +69,7 @@
 					<form class="name-form">
 						<div class="text-center error-message"></div>
 						<input id="name-input" class="text-input text-center form-control" type="text" name="name-input"
-							placeholder="Enter your name here" required>
+							placeholder="Enter your name here" required autocomplete="name">
 						<button type="submit" class="btn btn-info play-button"><i class="fas fa-user"></i>
 							Play as Guest </button>
 					</form>
@@ -92,8 +92,8 @@
 						<form id="login-form" class="auth-form hidden" onsubmit="handleLogin(event)">
 							<h4 class="text-center mb-3">Login to your account</h4>
 							<div class="text-center text-danger mb-2" id="login-error"></div>
-							<input type="text" id="login-username" class="form-control mb-2" placeholder="Username" required>
-							<input type="password" id="login-password" class="form-control mb-2" placeholder="Password" required>
+							<input type="text" id="login-username" class="form-control mb-2" placeholder="Username" required autocomplete="username">
+							<input type="password" id="login-password" class="form-control mb-2" placeholder="Password" required autocomplete="current-password">
 							<button type="submit" class="btn btn-primary btn-block">
 								<i class="fas fa-sign-in-alt"></i> Login
 							</button>
@@ -105,9 +105,9 @@
 						<form id="register-form" class="auth-form hidden" onsubmit="handleRegister(event)">
 							<h4 class="text-center mb-3">Create an account</h4>
 							<div class="text-center text-danger mb-2" id="register-error"></div>
-							<input type="text" id="register-username" class="form-control mb-2" placeholder="Username (3-50 chars)" required minlength="3" maxlength="50">
-							<input type="password" id="register-password" class="form-control mb-2" placeholder="Password (6+ chars)" required minlength="6">
-							<input type="password" id="register-confirm-password" class="form-control mb-2" placeholder="Confirm Password" required>
+							<input type="text" id="register-username" class="form-control mb-2" placeholder="Username (3-50 chars)" required minlength="3" maxlength="50" autocomplete="username">
+							<input type="password" id="register-password" class="form-control mb-2" placeholder="Password (6+ chars)" required minlength="6" autocomplete="new-password">
+							<input type="password" id="register-confirm-password" class="form-control mb-2" placeholder="Confirm Password" required autocomplete="new-password">
 							<button type="submit" class="btn btn-success btn-block">
 								<i class="fas fa-user-plus"></i> Register
 							</button>
