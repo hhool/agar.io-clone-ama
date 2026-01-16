@@ -5,6 +5,10 @@ let player = { xVector: 0, yVector: 0.1, zoom: 1.5 };
 let orbs = [];
 let players = [];
 
+// World dimensions (will be populated from server on init)
+let worldWidth = 1500;
+let worldHeight = 1500;
+
 let canvas = $('#the-canvas')[0];
 let context = canvas.getContext('2d');
 canvas.width = wWidth;

@@ -118,7 +118,12 @@ io.sockets.on('connect', socket => {
                 });
             }
         }, 16);
-        socket.emit('initReturn', { orbs, uid: player.playerData.uid });
+        socket.emit('initReturn', { 
+            orbs, 
+            uid: player.playerData.uid,
+            worldWidth: settings.worldWidth,
+            worldHeight: settings.worldHeight
+        });
         players.push(playerData);
     })
 

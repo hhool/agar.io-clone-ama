@@ -28,6 +28,9 @@ function init() {
 socket.on('initReturn', data => {
     orbs = data.orbs;
     player.uid = data.uid;
+    // receive world dimensions from server
+    if (data.worldWidth) worldWidth = data.worldWidth;
+    if (data.worldHeight) worldHeight = data.worldHeight;
     clock = setInterval(() => {
         socket.emit('tick', {
             xVector: player.xVector,

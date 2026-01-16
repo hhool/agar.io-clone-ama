@@ -523,6 +523,22 @@ function draw() {
     // Draw parallax starfield (behind everything)
     drawStarfield(context, camX, camy);
 
+    // Draw world border (visible, scales with zoom)
+    try {
+        context.save();
+        // Keep border thickness visually consistent when zooming
+        context.lineWidth = Math.max(2, 8 / (playerZoom || 1));
+        context.strokeStyle = 'rgba(255,255,255,0.95)';
+        context.shadowColor = 'rgba(0,0,0,0.6)';
+        context.shadowBlur = Math.max(0, 12 / (playerZoom || 1));
+        // Dashed border for visibility
+        context.setLineDash([20 / (playerZoom || 1), 10 / (playerZoom || 1)]);
+        context.strokeRect(0, 0, (typeof worldWidth !== 'undefined' ? worldWidth : 1500), (typeof worldHeight !== 'undefined' ? worldHeight : 1500));
+        context.setLineDash([]);
+        context.restore();
+    } catch (e) {
+        // ignore if context or world dims not available yet
+    }
     // Draw player trails
     drawPlayerTrails(context);
 
